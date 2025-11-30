@@ -44,6 +44,127 @@ initDB();
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello NExt leveld developers!");
 });
+// Add user
+app.post("/user", async (req: Request, res: Response) => {
+  const { name, email } = req.body;
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO users(name, email) VALUES($1, $2) RETURNING *`,
+      [name, email]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Data inserted successfully",
+      data: result.rows[0],
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Post failed",
+    });
+  }
+});
+// Get all users
+app.get("/users", async (req: Request, res: Response) => {
+  try {
+    const results = await pool.query(`SELECT * FROM users`);
+    res.status(200).json({
+      success: true,
+      message: "Users retrived successfully",
+      data: results.rows,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+      data: err,
+    });
+  }
+});
+// Get individual user
+app.get("/user/:id", async (req: Request, res: Response) => {
+  const id = req.params.id;
+
+  try {
+    const result = await pool.query(`SELECT * FROM users WHERE id = $1`, [id]);
+    if (result.rows.length < 1) {
+      res.status(404).json({
+        success: false,
+        message: "Could not find the user",
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "User retrived successfully",
+        data: result.rows[0],
+      });
+    }
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+// update user
+app.put("/user/:id", async (req: Request, res: Response) => {
+  const id = req.params.id;
+  console.log(id);
+  const { name, email } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING *`,
+      [name, email, id]
+    );
+    if (result.rows.length < 1) {
+      res.status(404).json({
+        success: false,
+        message: "Could not update user",
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "User updated successfully",
+        data: result.rows[0],
+      });
+    }
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+// Delete user
+app.delete("/user/:id", async (req: Request, res: Response) => {
+  const id = req.params.id;
+
+  try {
+    const result = await pool.query(
+      `DELETE FROM users WHERE id = $1 RETURNING *`,
+      [id]
+    );
+    if (result.rows.length < 1) {
+      res.status(404).json({
+        success: false,
+        message: "Could not delete the user",
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "User Deleted successfully",
+        data: result.rows[0],
+      });
+    }
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
